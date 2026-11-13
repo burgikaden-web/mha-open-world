@@ -117,7 +117,7 @@ kbd { min-width: 27px; height: 27px; display: inline-grid; place-items: center; 
   .hud { padding: 12px; }
   .hero-panel { width: 220px; }
   .district-label { display: none; }
-  .hud-top .district-label:first-of-type { display: flex; position: absolute; top: 102px; left: 12px; padding: 8px 11px; }
+  .hud-top .quirk-label { display: flex; position: absolute; top: 102px; left: 12px; padding: 8px 11px; }
   .objective { top: 98px; min-width: 0; width: max-content; max-width: calc(100% - 24px); }
   .hud-bottom { left: 12px; right: 12px; bottom: 12px; flex-direction: column; align-items: stretch; }
   .ability-panel { justify-content: space-between; }
