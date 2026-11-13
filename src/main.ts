@@ -335,7 +335,7 @@ async function loadHero(scene: Scene, shadows: ShadowGenerator): Promise<HeroRig
   const restPose = new Map<string, Quaternion>();
   if (skeleton) {
     for (const bone of skeleton.bones) {
-      const localRotation = bone.rotation;
+      const localRotation = bone.getRotationQuaternion(Space.LOCAL);
       restPose.set(bone.name, localRotation ? localRotation.clone() : Quaternion.Identity());
     }
   }
