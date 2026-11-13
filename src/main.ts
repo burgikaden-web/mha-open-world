@@ -71,7 +71,7 @@ const state = {
   targetsCompleted: 0,
   toastUntil: 0,
   fps: 0,
-  quirk: "one-for-all",
+  quirk: "one-for-all" as QuirkId,
   actionTimer: 0,
   actionPose: "none" as "none" | "strike" | "dash" | "jump"
 };
@@ -520,7 +520,9 @@ async function startGame(): Promise<void> {
     let pitch = 0.18;
     let verticalVelocity = 0;
     let grounded = true;
+    let wasGrounded = true;
     let burstVelocity = 0;
+    let hotSide = true;
     const projectiles: Projectile[] = [];
     const burstRings: { mesh: Mesh; age: number }[] = [];
     let elapsed = 0;
@@ -533,20 +535,24 @@ async function startGame(): Promise<void> {
       state.actionTimer = 0.42;
       state.actionPose = "strike";
       const quirk = QUIRKS[quirkId];
+      const attackColor = quirkId === "half-cold-half-hot" ? (hotSide ? new Color3(1, 0.28, 0.06) : new Color3(0.2, 0.72, 1)) : quirk.color;
+      const attackGlow = quirkId === "half-cold-half-hot" ? (hotSide ? new Color3(1, 0.48, 0.08) : new Color3(0.32, 0.82, 1)) : quirk.glow;
+      const attackName = quirkId === "half-cold-half-hot" ? (hotSide ? "Flashfire Flame Burst" : "Flashfreeze Shot") : quirk.qName;
+      if (quirkId === "half-cold-half-hot") hotSide = !hotSide;
       const direction = new Vector3(Math.sin(yaw), 0, Math.cos(yaw)).normalize();
       const origin = hero.root.position.add(new Vector3(0, 1.35, 0)).add(direction.scale(0.9));
       const diameter = quirkId === "explosion" ? 0.72 : quirkId === "half-cold-half-hot" ? 0.58 : 0.42;
       const orb = MeshBuilder.CreateSphere(`${quirk.name} projectile`, { diameter, segments: 18 }, scene);
-      const orbMat = pbr(scene, `${quirk.name} energy`, quirk.color, 0.18, 0.12, quirk.glow);
+      const orbMat = pbr(scene, `${attackName} energy`, attackColor, 0.18, 0.12, attackGlow);
       orb.material = orbMat;
       orb.position.copyFrom(origin);
       const pulseLight = new PointLight("Quirk projectile light", origin, scene);
-      pulseLight.diffuse = quirk.glow;
+      pulseLight.diffuse = attackGlow;
       pulseLight.intensity = quirkId === "explosion" ? 1.15 : 0.72;
       pulseLight.range = quirkId === "explosion" ? 7 : 5;
       orb.metadata = { pulseLight, quirkId };
       projectiles.push({ mesh: orb, direction, lifetime: 2.2 });
-      showToast(quirk.qName.toUpperCase());
+      showToast(attackName.toUpperCase());
     };
 
     const useQuirkMobility = (quirkId: QuirkId): void => {
@@ -604,6 +610,8 @@ async function startGame(): Promise<void> {
       if (event.code === "Space" && started && grounded) {
         verticalVelocity = 8.1;
         grounded = false;
+        state.actionTimer = 0.22;
+        state.actionPose = "jump";
       }
     };
     const onKeyUp = (event: KeyboardEvent): void => { keys.delete(event.code); };
@@ -652,6 +660,11 @@ async function startGame(): Promise<void> {
         } else {
           grounded = false;
         }
+        if (!wasGrounded && grounded) {
+          state.actionTimer = 0.2;
+          state.actionPose = "dash";
+        }
+        wasGrounded = grounded;
 
         hero.root.position.set(collider.position.x, collider.position.y - 0.92, collider.position.z);
         if (isMoving) hero.root.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
