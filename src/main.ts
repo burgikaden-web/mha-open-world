@@ -25,6 +25,15 @@ import {
   WebGPUEngine
 } from "@babylonjs/core";
 
+
+type QuirkId = "one-for-all" | "half-cold-half-hot" | "explosion" | "engine";
+const QUIRKS: Record<QuirkId, { name: string; qName: string; eName: string; color: Color3; glow: Color3 }> = {
+  "one-for-all": { name: "One For All", qName: "Delaware Smash", eName: "Full Cowling Dash", color: new Color3(0.08, 0.78, 0.68), glow: new Color3(0.12, 1, 0.78) },
+  "half-cold-half-hot": { name: "Half-Cold Half-Hot", qName: "Flame Burst", eName: "Ice Rampart", color: new Color3(0.22, 0.72, 0.96), glow: new Color3(0.38, 0.82, 1) },
+  explosion: { name: "Explosion", qName: "Blast Shot", eName: "Blast Propulsion", color: new Color3(1, 0.38, 0.08), glow: new Color3(1, 0.62, 0.12) },
+  engine: { name: "Engine", qName: "Recipro Burst", eName: "Turbo Drive", color: new Color3(0.34, 0.68, 1), glow: new Color3(0.48, 0.8, 1) }
+};
+
 type TrainingTarget = {
   root: TransformNode;
   core: Mesh;
@@ -61,7 +70,10 @@ const state = {
   energy: 100,
   targetsCompleted: 0,
   toastUntil: 0,
-  fps: 0
+  fps: 0,
+  quirk: "one-for-all",
+  actionTimer: 0,
+  actionPose: "none" as "none" | "strike" | "dash" | "jump"
 };
 
 function showToast(message: string): void {
@@ -77,6 +89,13 @@ function updateHud(targetsTotal: number): void {
   const energyValue = document.querySelector<HTMLElement>("#energy-value")!;
   const targetCount = document.querySelector<HTMLElement>("#target-count")!;
   const objectiveText = document.querySelector<HTMLElement>("#objective-text")!;
+  const quirkName = document.querySelector<HTMLElement>("#quirk-name");
+  const qLabel = document.querySelector<HTMLElement>("#q-ability-name");
+  const eLabel = document.querySelector<HTMLElement>("#e-ability-name");
+  const quirk = QUIRKS[state.quirk];
+  if (quirkName) quirkName.textContent = quirk.name;
+  if (qLabel) qLabel.textContent = quirk.qName;
+  if (eLabel) eLabel.textContent = quirk.eName;
 
   healthFill.style.width = `${state.health}%`;
   energyFill.style.width = `${state.energy}%`;
@@ -345,28 +364,56 @@ async function loadHero(scene: Scene, shadows: ShadowGenerator): Promise<HeroRig
   return { root, skeleton, restPose, meshes };
 }
 
-function animateHero(hero: HeroRig, elapsed: number, movement: number): void {
+function animateHero(hero: HeroRig, elapsed: number, movement: number, sprinting = false, airborne = false, action: "none" | "strike" | "dash" | "jump" = "none"): void {
   const skeleton = hero.skeleton;
   if (!skeleton) {
-    hero.root.position.y = Math.sin(elapsed * 2.2) * 0.025;
+    hero.root.position.y = airborne ? 0.04 : Math.sin(elapsed * 2.2) * 0.025;
     return;
   }
-  const stride = movement > 0.1 ? Math.min(movement, 1.5) : 0.08;
-  const swing = Math.sin(elapsed * (movement > 0.1 ? 10.5 : 2.4)) * stride * 0.42;
-  const sideSwing = Math.sin(elapsed * (movement > 0.1 ? 10.5 : 2.4) + Math.PI) * stride * 0.42;
 
-  const angleByBone: Record<string, number> = {
-    thigh_l: swing, thigh_r: sideSwing,
-    calf_l: Math.max(0, -swing) * 0.55, calf_r: Math.max(0, -sideSwing) * 0.55,
-    upperarm_l: -sideSwing * 0.72, upperarm_r: -swing * 0.72,
-    lowerarm_l: Math.max(0, swing) * 0.2, lowerarm_r: Math.max(0, sideSwing) * 0.2,
-    spine_02: movement > 0.1 ? -0.035 : Math.sin(elapsed * 1.6) * 0.018
+  const moving = movement > 0.1;
+  const cadence = elapsed * (sprinting ? 14.2 : 10.2);
+  const stride = moving ? Math.min(movement, 1.5) * (sprinting ? 1.2 : 0.88) : 0;
+  const legSwing = Math.sin(cadence) * stride * 0.48;
+  const oppositeLeg = Math.sin(cadence + Math.PI) * stride * 0.48;
+  const armSwing = Math.sin(cadence + Math.PI) * stride * 0.34;
+  const pose: Record<string, number> = {
+    thigh_l: airborne ? -0.45 : legSwing,
+    thigh_r: airborne ? -0.45 : oppositeLeg,
+    calf_l: airborne ? 0.7 : Math.max(0, -legSwing) * 0.8,
+    calf_r: airborne ? 0.7 : Math.max(0, -oppositeLeg) * 0.8,
+    upperarm_l: airborne ? -0.9 : armSwing,
+    upperarm_r: airborne ? -0.9 : -armSwing,
+    lowerarm_l: airborne ? -0.35 : Math.max(0, legSwing) * 0.35,
+    lowerarm_r: airborne ? -0.35 : Math.max(0, oppositeLeg) * 0.35,
+    spine_01: moving ? (sprinting ? -0.12 : -0.045) : Math.sin(elapsed * 1.5) * 0.018,
+    spine_02: moving ? (sprinting ? -0.08 : -0.025) : Math.sin(elapsed * 1.5) * 0.012,
+    head: Math.sin(elapsed * 1.5) * 0.012,
+    foot_l: airborne ? -0.2 : -Math.max(0, legSwing) * 0.3,
+    foot_r: airborne ? -0.2 : -Math.max(0, oppositeLeg) * 0.3
   };
+
+  if (action === "strike") {
+    pose.upperarm_r = -2.05;
+    pose.lowerarm_r = -0.8;
+    pose.spine_02 = -0.22;
+    pose.thigh_l = -0.12;
+  } else if (action === "dash") {
+    pose.spine_01 = -0.3;
+    pose.spine_02 = -0.2;
+    pose.upperarm_l = -1.25;
+    pose.upperarm_r = -1.25;
+    pose.thigh_l = 0.55;
+    pose.thigh_r = -0.55;
+  }
 
   for (const bone of skeleton.bones) {
     const rest = hero.restPose.get(bone.name);
-    const angle = angleByBone[bone.name];
-    if (!rest || angle === undefined) continue;
+    if (!rest) continue;
+    const key = bone.name.toLowerCase();
+    const angleKey = Object.keys(pose).find((candidate) => key === candidate || key.endsWith(candidate) || key.includes(candidate));
+    if (!angleKey) continue;
+    const angle = pose[angleKey];
     const animated = rest.multiply(Quaternion.RotationAxis(Axis.X, angle));
     bone.setRotationQuaternion(animated, Space.LOCAL);
   }
@@ -480,39 +527,80 @@ async function startGame(): Promise<void> {
     let lastFrameTime = performance.now();
     let started = false;
 
-    const firePulse = (): void => {
+    const spawnQuirkProjectile = (quirkId: QuirkId): void => {
       if (!started || state.energy < 22) return;
       state.energy -= 22;
+      state.actionTimer = 0.42;
+      state.actionPose = "strike";
+      const quirk = QUIRKS[quirkId];
       const direction = new Vector3(Math.sin(yaw), 0, Math.cos(yaw)).normalize();
       const origin = hero.root.position.add(new Vector3(0, 1.35, 0)).add(direction.scale(0.9));
-      const orb = MeshBuilder.CreateSphere("Energy pulse", { diameter: 0.42, segments: 16 }, scene);
-      const orbMat = pbr(scene, "Energy pulse material", new Color3(0.05, 0.72, 0.68), 0.2, 0.12, new Color3(0.05, 0.9, 0.8));
+      const diameter = quirkId === "explosion" ? 0.72 : quirkId === "half-cold-half-hot" ? 0.58 : 0.42;
+      const orb = MeshBuilder.CreateSphere(`${quirk.name} projectile`, { diameter, segments: 18 }, scene);
+      const orbMat = pbr(scene, `${quirk.name} energy`, quirk.color, 0.18, 0.12, quirk.glow);
       orb.material = orbMat;
       orb.position.copyFrom(origin);
-      const pulseLight = new PointLight("Pulse light", origin, scene);
-      pulseLight.diffuse = new Color3(0.14, 0.95, 0.84);
-      pulseLight.intensity = 0.65;
-      pulseLight.range = 4.5;
-      orb.metadata = { pulseLight };
+      const pulseLight = new PointLight("Quirk projectile light", origin, scene);
+      pulseLight.diffuse = quirk.glow;
+      pulseLight.intensity = quirkId === "explosion" ? 1.15 : 0.72;
+      pulseLight.range = quirkId === "explosion" ? 7 : 5;
+      orb.metadata = { pulseLight, quirkId };
       projectiles.push({ mesh: orb, direction, lifetime: 2.2 });
-      showToast("ENERGY PULSE");
+      showToast(quirk.qName.toUpperCase());
     };
 
-    const useBurstStep = (): void => {
+    const useQuirkMobility = (quirkId: QuirkId): void => {
       if (!started || state.energy < 18 || burstVelocity > 1) return;
       state.energy -= 18;
-      burstVelocity = 18;
-      const ring = createTrainingBurst(scene, hero.root.position.add(new Vector3(0, 0.08, 0)));
-      burstRings.push({ mesh: ring, age: 0 });
-      showToast("BURST STEP");
+      state.actionTimer = 0.55;
+      state.actionPose = "dash";
+      const forward = new Vector3(Math.sin(yaw), 0, Math.cos(yaw)).normalize();
+      if (quirkId === "one-for-all") {
+        burstVelocity = 23;
+        const ring = createTrainingBurst(scene, hero.root.position.add(new Vector3(0, 0.08, 0)));
+        burstRings.push({ mesh: ring, age: 0 });
+      } else if (quirkId === "half-cold-half-hot") {
+        burstVelocity = 5;
+        const ice = MeshBuilder.CreateBox("Ice rampart", { width: 4.2, height: 2.5, depth: 0.8 }, scene);
+        ice.position.copyFrom(hero.root.position.add(forward.scale(3.2)).add(new Vector3(0, 1.25, 0)));
+        ice.rotation.y = yaw;
+        const iceMat = pbr(scene, "Ice rampart material", new Color3(0.35, 0.78, 0.96), 0.12, 0.2, new Color3(0.22, 0.58, 0.9));
+        iceMat.alpha = 0.78;
+        ice.material = iceMat;
+        ice.isPickable = false;
+        window.setTimeout(() => { ice.dispose(); iceMat.dispose(); }, 4200);
+      } else if (quirkId === "explosion") {
+        burstVelocity = 29;
+        const blast = MeshBuilder.CreateSphere("Explosion propulsion burst", { diameter: 1.8, segments: 16 }, scene);
+        blast.position.copyFrom(hero.root.position.add(new Vector3(0, 0.9, 0)));
+        const blastMat = pbr(scene, "Explosion propulsion glow", new Color3(1, 0.3, 0.04), 0.08, 0.18, new Color3(1, 0.4, 0.06));
+        blastMat.alpha = 0.72;
+        blast.material = blastMat;
+        window.setTimeout(() => { blast.dispose(); blastMat.dispose(); }, 240);
+      } else {
+        burstVelocity = 16;
+        state.energy = Math.max(0, state.energy - 8);
+        showToast("RECIPRO TURBO");
+      }
+      showToast(QUIRKS[quirkId].eName.toUpperCase());
+    };
+
+    const selectQuirk = (quirkId: QuirkId): void => {
+      state.quirk = quirkId;
+      showToast(`QUIRK EQUIPPED: ${QUIRKS[quirkId].name.toUpperCase()}`);
+      updateHud(targets.length);
     };
 
     const onKeyDown = (event: KeyboardEvent): void => {
       if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
       keys.add(event.code);
       if (event.repeat) return;
-      if (event.code === "KeyQ") firePulse();
-      if (event.code === "KeyE") useBurstStep();
+      if (event.code === "KeyQ") spawnQuirkProjectile(state.quirk as QuirkId);
+      if (event.code === "KeyE") useQuirkMobility(state.quirk as QuirkId);
+      if (event.code === "Digit1") selectQuirk("one-for-all");
+      if (event.code === "Digit2") selectQuirk("half-cold-half-hot");
+      if (event.code === "Digit3") selectQuirk("explosion");
+      if (event.code === "Digit4") selectQuirk("engine");
       if (event.code === "Space" && started && grounded) {
         verticalVelocity = 8.1;
         grounded = false;
@@ -567,7 +655,9 @@ async function startGame(): Promise<void> {
 
         hero.root.position.set(collider.position.x, collider.position.y - 0.92, collider.position.z);
         if (isMoving) hero.root.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
-        animateHero(hero, elapsed, isMoving ? (sprinting ? 1.45 : 1.0) : 0);
+        state.actionTimer = Math.max(0, state.actionTimer - dt);
+        if (state.actionTimer === 0) state.actionPose = "none";
+        animateHero(hero, elapsed, isMoving ? (sprinting ? 1.45 : 1.0) : 0, sprinting, !grounded, state.actionPose);
 
         const cameraTarget = hero.root.position.add(new Vector3(0, 1.25, 0));
         const horizontalDistance = 6.8 * Math.cos(pitch);
@@ -588,7 +678,8 @@ async function startGame(): Promise<void> {
         let hit = false;
         for (const target of targets) {
           if (target.active && Vector3.Distance(projectile.mesh.position, target.position) < 1.2) {
-            if (target.damage(35)) {
+            const damage = (projectile.mesh.metadata?.quirkId === "explosion" ? 55 : projectile.mesh.metadata?.quirkId === "half-cold-half-hot" ? 42 : 35);
+            if (target.damage(damage)) {
               state.targetsCompleted += 1;
               showToast("TARGET DISABLED");
             } else {
