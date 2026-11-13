@@ -19,7 +19,9 @@ For a production build, run `npm run build`. The finished static site is written
 - WASD movement, sprinting, jumping, and collision-aware movement.
 - A compact city district with roads, sidewalks, buildings, windows, trees, streetlights, and a U.A.-style training yard.
 - A rigged humanoid GLB hero model, with simple procedural movement posing.
-- Energy Pulse ability and Burst Step movement ability.
+- Four selectable quirks: One For All, Half-Cold Half-Hot, Explosion, and Engine (press 1–4 to switch).
+- Each quirk has a distinct Q attack and E mobility/utility move; Half-Cold Half-Hot alternates between fire and ice attacks.
+- Expanded procedural rig posing for idle, walk, sprint, jump, strike, and dash states. The bundled GLB still has no authored animation clips, so these poses are generated at runtime.
 - Three practice targets, hit feedback, an objective counter, and a browser HUD.
 - Vite + TypeScript build pipeline.
 
@@ -45,7 +47,7 @@ The starter hero is the **Superhero Male** base from Quaternius's *Universal Bas
 - Official download page: https://quaternius.itch.io/universal-base-characters
 - License: https://creativecommons.org/publicdomain/zero/1.0/
 
-The bundled base model does not include animation clips. This prototype applies a lightweight procedural gait to the rig. The next model pass should add a full animation set, modular hair/outfit pieces, facial options, and original hero-specific materials. MHA characters, costumes, logos, and anime models are not bundled.
+The bundled base model does not include animation clips. This prototype applies procedural gait and action poses to the rig; it does not yet use authored motion-capture or hand-keyed animation clips. The next model pass should add a full animation set, modular hair/outfit pieces, facial options, and original hero-specific materials. MHA characters, costumes, logos, and anime models are not bundled.
 
 ## Architecture
 
