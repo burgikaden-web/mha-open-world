@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07111d" />
+    <meta name="description" content="Hero City — a browser-based 3D superhero training prototype." />
+    <title>Hero City | Browser Prototype</title>
+  </head>
+  <body>
+    <main id="game-shell">
+      <canvas id="render-canvas" aria-label="Hero City 3D game"></canvas>
+
+      <div id="loading-screen" class="screen">
+        <div class="loading-card">
+          <div class="brand-mark"><span class="brand-star">✦</span> HERO CITY</div>
+          <div class="eyebrow">BROWSER BUILD · PROTOTYPE 0.2</div>
+          <h1>Loading the city</h1>
+          <p id="loading-message">Preparing the 3D world and character model…</p>
+          <div class="loading-track"><div id="loading-fill"></div></div>
+        </div>
+      </div>
+
+      <div id="intro-screen" class="screen hidden">
+        <div class="intro-card">
+          <div class="eyebrow">U.A. TRAINING DISTRICT · SECTOR 01</div>
+          <div class="brand-mark"><span class="brand-star">✦</span> HERO CITY</div>
+          <h1>Your city.<br /><span>Your story.</span></h1>
+          <p>Explore the training district, test your abilities, and take on the target course.</p>
+          <button id="start-button" class="primary-button">ENTER THE CITY <span>↗</span></button>
+          <div class="intro-foot">DESKTOP PREVIEW · KEYBOARD + MOUSE</div>
+        </div>
+      </div>
+
+      <section id="hud" class="hud hidden" aria-live="polite">
+        <div class="hud-top">
+          <div class="hero-panel glass-panel">
+            <div class="hero-badge">HC</div>
+            <div class="hero-info">
+              <div class="eyebrow">HERO PROFILE</div>
+              <strong>Rookie Hero</strong>
+              <div class="stat-line"><span>HEALTH</span><div class="meter"><i id="health-fill"></i></div><b id="health-value">100</b></div>
+              <div class="stat-line energy"><span>ENERGY</span><div class="meter"><i id="energy-fill"></i></div><b id="energy-value">100</b></div>
+            </div>
+          </div>
+          <div class="district-label glass-panel">
+            <span class="status-dot"></span>
+            <div><div class="eyebrow">CURRENT LOCATION</div><strong>U.A. TRAINING DISTRICT</strong></div>
+          </div>
+        </div>
+
+        <div class="objective glass-panel">
+          <div class="objective-icon">◎</div>
+          <div><div class="eyebrow">TRAINING OBJECTIVE</div><strong id="objective-text">Activate the 3 practice targets</strong></div>
+          <div class="objective-count" id="target-count">0 / 3</div>
+        </div>
+
+        <div class="crosshair"><span></span><i></i></div>
+        <div id="toast" class="toast"></div>
+
+        <div class="hud-bottom">
+          <div class="ability-panel glass-panel">
+            <div class="ability"><kbd>Q</kbd><div><strong>Energy Pulse</strong><small>Ranged training ability</small></div><span class="ability-dot"></span></div>
+            <div class="ability"><kbd>E</kbd><div><strong>Burst Step</strong><small>Quick forward movement</small></div><span class="ability-dot"></span></div>
+          </div>
+          <div class="controls-hint glass-panel">
+            <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>MOVE</span></div>
+            <div><kbd>SHIFT</kbd><span>SPRINT</span></div>
+            <div><kbd>SPACE</kbd><span>JUMP</span></div>
+            <div><kbd>MOUSE</kbd><span>LOOK</span></div>
+          </div>
+        </div>
+      </section>
+
+      <div id="pause-hint" class="pause-hint hidden">CLICK THE GAME TO CAPTURE MOUSE · ESC TO RELEASE</div>
+      <div id="error-screen" class="screen hidden">
+        <div class="loading-card error-card">
+          <div class="eyebrow">STARTUP ERROR</div>
+          <h1>Could not start the 3D scene</h1>
+          <p id="error-message">Check that your browser supports WebGL 2 and try again.</p>
+        </div>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

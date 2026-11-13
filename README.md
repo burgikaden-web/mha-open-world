@@ -1,51 +1,65 @@
-# Rising Legacy — My Hero Academia-inspired open-world game
+# Hero City — Browser 3D Prototype
 
-A Godot 4.7.2 third-person action-game prototype. This repository is the foundation for a larger fan-made superhero project.
+This repository is now a **browser-based 3D game**. It is no longer a Godot project.
 
-## First playable slice
+## Run it
 
-- Procedurally generated 3D urban district with roads, sidewalks, buildings, storefront glass, streetlights, and a training plaza.
-- Third-person player controller with mouse-look camera, sprinting, jumping, and collision.
-- Starter hero character built from editable 3D meshes and materials.
-- Close-range punch and a ranged energy-burst prototype.
-- Training targets with health feedback and a simple HUD.
+1. Install **Node.js 20 or newer**.
+2. Open this folder in a terminal.
+3. Run `npm install`.
+4. Run `npm run dev`.
+5. Open the local URL printed by Vite (usually `http://localhost:5173`).
 
-## Requirements
+For a production build, run `npm run build`. The finished static site is written to `dist/` and can be hosted on GitHub Pages, Netlify, Vercel, or another static web host.
 
-- Godot Engine **4.7.2** (Forward+/Mobile renderer can be selected later; this starter uses Compatibility for broad support).
+## Current prototype
 
-## Run
-
-1. Download or clone this repository.
-2. Open Godot Project Manager.
-3. Choose **Import**, select this folder's `project.godot`, then import.
-4. Open the project and press **F6** or **F5**.
+- Babylon.js 9 browser renderer with **WebGPU when available** and a **WebGL 2 fallback**.
+- Third-person camera with mouse look and pointer lock.
+- WASD movement, sprinting, jumping, and collision-aware movement.
+- A compact city district with roads, sidewalks, buildings, windows, trees, streetlights, and a U.A.-style training yard.
+- A rigged humanoid GLB hero model, with simple procedural movement posing.
+- Energy Pulse ability and Burst Step movement ability.
+- Three practice targets, hit feedback, an objective counter, and a browser HUD.
+- Vite + TypeScript build pipeline.
 
 ## Controls
 
 | Input | Action |
 |---|---|
 | WASD | Move |
-| Mouse | Rotate camera |
+| Mouse | Look around |
 | Shift | Sprint |
 | Space | Jump |
-| E | Punch nearby training targets |
-| Q | Fire a forward energy burst |
-| Escape | Release mouse |
+| Q | Energy Pulse |
+| E | Burst Step |
+| Esc | Release the mouse |
 
-Click the game window to recapture the mouse.
+Click the game canvas to recapture the mouse after releasing it.
 
-## Development roadmap
+## Character model and licensing
 
-1. Playable city-block prototype (current).
-2. Character creator and saveable player profile.
-3. Rigged hero model, animation state machine, and responsive combat.
-4. Quirk framework with cooldowns, progression, VFX, and traversal.
-5. Expanded city districts, interiors, NPCs, missions, and story chapters.
-6. Battle/custom encounter mode; online features only after the single-player foundation is stable.
+The starter hero is the **Superhero Male** base from Quaternius's *Universal Base Characters — Standard* pack. The model is rigged and supplied as a GLB in `public/assets/hero.glb`. The pack is distributed under **CC0 1.0 Universal**; its license notice is preserved in `public/assets/QUATERNIUS-LICENSE.txt`.
 
-## Art status
+- Pack page: https://quaternius.com/packs/universalbasecharacters.html
+- Official download page: https://quaternius.itch.io/universal-base-characters
+- License: https://creativecommons.org/publicdomain/zero/1.0/
 
-The first slice uses procedural meshes and materials so it can run without external asset packs. These are blockout-quality starter models, **not finished AAA character or environment art**. Replace them incrementally with original rigged models, authored textures, animation clips, and optimized environment assets.
+The bundled base model does not include animation clips. This prototype applies a lightweight procedural gait to the rig. The next model pass should add a full animation set, modular hair/outfit pieces, facial options, and original hero-specific materials. MHA characters, costumes, logos, and anime models are not bundled.
 
-This is an unofficial fan project and is not affiliated with or endorsed by the creators or rights holders of My Hero Academia. Use original or properly licensed assets; do not redistribute ripped show/game assets.
+## Architecture
+
+- `src/main.ts` — engine boot, city construction, player controls, training abilities, camera, and HUD updates.
+- `src/styles.css` — browser HUD and menus.
+- `public/assets/hero.glb` — CC0 rigged base character.
+- `public/assets/QUATERNIUS-LICENSE.txt` — original model license notice.
+
+## Roadmap
+
+1. Replace the starter suit material with a customizable hero costume and character creator.
+2. Add authored idle, walk, run, jump, land, and ability animation clips.
+3. Expand the district into a streamed city with traffic, pedestrians, interiors, and side activities.
+4. Add a modular quirk framework with ability progression and VFX.
+5. Add story missions, save data, and online features only after the single-player game loop is stable.
+
+This is an early playable foundation, **not a finished AAA game**. The browser build still needs real-device performance testing and further art, animation, audio, level design, and gameplay work.
